@@ -1,17 +1,18 @@
 <script lang="ts">
 	import BcvConverter from '$lib/components/tools/BcvConverter.svelte';
+	import BudgetCard from '$lib/components/dashboard/BudgetCard.svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { DollarSign, TrendingUp, TrendingDown, CircleAlert } from 'lucide-svelte';
 
 	let { data } = $props();
 
-	// Fallback visual si no hay datos
 	let finanzas = $derived(
 		data.financeData || {
 			mesActual: '---',
 			patrimonioTotal: 0,
 			ingresos: 0,
-			gastos: 0
+			gastos: 0,
+			categorias: []
 		}
 	);
 </script>
@@ -74,5 +75,8 @@
 
 	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 		<BcvConverter />
+		<div class="md:col-span-1 lg:col-span-2">
+			<BudgetCard categorias={finanzas.categorias} mesActual={finanzas.mesActual} />
+		</div>
 	</div>
 </div>
