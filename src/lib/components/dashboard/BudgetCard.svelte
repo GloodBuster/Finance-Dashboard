@@ -12,26 +12,31 @@
 		$props();
 </script>
 
-<Card.Root class="h-full">
+<Card.Root class="h-full w-full min-w-0">
 	<Card.Header>
 		<Card.Title>Presupuesto vs. Gastado</Card.Title>
 		<Card.Description>Desglose de tus límites para {mesActual}</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		<div class="scrollbar-elegant max-h-56 space-y-5 overflow-y-auto pr-3">
+		<div class="scrollbar-elegant max-h-56 space-y-5 overflow-y-auto pr-3 md:max-h-80">
 			{#each categorias as cat}
 				{@const porcentajeBruto = cat.presupuesto > 0 ? (cat.gastado / cat.presupuesto) * 100 : 0}
 				{@const porcentaje = Math.min(porcentajeBruto, 100)}
 				{@const peligro = porcentajeBruto > 100}
 				{@const advertencia = porcentajeBruto >= 80 && !peligro}
 
-				<div class="space-y-1.5">
-					<div class="flex items-center justify-between text-sm">
-						<div class="flex items-center gap-2">
-							<span class="font-medium text-zinc-700 dark:text-zinc-200">{cat.nombre}</span>
+				<div class="w-full min-w-0 space-y-1.5">
+					<div class="flex w-full min-w-0 items-center justify-between gap-2 text-sm">
+						<div class="flex min-w-0 flex-1 items-center gap-2">
+							<span
+								class="block truncate font-medium text-zinc-700 dark:text-zinc-200"
+								title={cat.nombre}
+							>
+								{cat.nombre}
+							</span>
 
 							<span
-								class="rounded-md px-1.5 py-0.5 text-[10px] font-bold
+								class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold
                                 {peligro
 									? 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400'
 									: advertencia
@@ -42,7 +47,7 @@
 							</span>
 						</div>
 
-						<span class="font-mono text-xs text-zinc-500">
+						<span class="shrink-0 font-mono text-xs whitespace-nowrap text-zinc-500">
 							<span
 								class={peligro
 									? 'font-bold text-red-600 dark:text-red-400'

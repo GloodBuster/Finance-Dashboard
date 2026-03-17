@@ -3,6 +3,8 @@
 	import BudgetCard from '$lib/components/dashboard/BudgetCard.svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { DollarSign, TrendingUp, TrendingDown, CircleAlert } from 'lucide-svelte';
+	import FloatingConverter from '$lib/components/tools/FloatingConverter.svelte';
+	import ExpensesDonut from '$lib/components/dashboard/ExpensesDonut.svelte';
 
 	let { data } = $props();
 
@@ -74,9 +76,14 @@
 	</div>
 
 	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-		<BcvConverter />
-		<div class="md:col-span-1 lg:col-span-2">
+		<div class="min-w-0">
+			<ExpensesDonut categorias={finanzas.categorias} />
+		</div>
+
+		<div class="min-w-0 md:col-span-1 lg:col-span-2">
 			<BudgetCard categorias={finanzas.categorias} mesActual={finanzas.mesActual} />
 		</div>
 	</div>
 </div>
+
+<FloatingConverter />

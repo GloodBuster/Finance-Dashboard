@@ -11,10 +11,10 @@
 
 <ModeWatcher defaultMode="dark" />
 
-<div class="flex min-h-screen bg-zinc-50 transition-colors duration-300 dark:bg-zinc-950">
+<div class="flex min-h-dvh bg-zinc-50 transition-colors duration-300 dark:bg-zinc-950">
 	<Sidebar />
 
-	<main class="flex h-screen min-w-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0">
+	<main class="flex h-dvh min-w-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0">
 		<header
 			class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950"
 		>

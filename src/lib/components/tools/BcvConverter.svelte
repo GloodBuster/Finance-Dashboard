@@ -1,3 +1,9 @@
+<script module>
+	// Memoria global que sobrevive cuando el modal se cierra y se abre
+	let globalRate = 0;
+	let globalError = false;
+</script>
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
@@ -6,15 +12,26 @@
 	import { Button } from '$lib/components/ui/button';
 	import { RefreshCcw, ArrowDownUp } from 'lucide-svelte';
 
-	let rate = $state(0);
-	let loading = $state(true);
-	let error = $state(false);
+	// Inicializamos con los valores globales
+	let rate = $state(globalRate);
+	// Si ya tenemos una tasa global, no hace falta mostrar el estado de carga
+	let loading = $state(globalRate === 0 && !globalError);
+	let error = $state(globalError);
 
 	// Estados del conversor
 	let usdAmount = $state('');
 	let vesAmount = $state('');
 
-	async function fetchRate() {
+	// Le agregamos el parámetro force para decidir si usamos caché o forzamos la petición
+	async function fetchRate(force = false) {
+		// Si ya hay tasa en la memoria global y no estamos forzando la recarga, salimos temprano
+		if (globalRate > 0 && !force) {
+			rate = globalRate;
+			error = globalError;
+			loading = false;
+			return;
+		}
+
 		loading = true;
 		error = false;
 		try {
@@ -22,20 +39,25 @@
 			const data = await res.json();
 			if (data.status === 'success') {
 				rate = data.rate;
+				globalRate = data.rate; // Guardamos en la memoria global
+				globalError = false;
 				// Si ya había algo escrito, recalcular al actualizar la tasa
 				if (usdAmount) handleUsdInput({ currentTarget: { value: usdAmount } } as any);
 			} else {
 				error = true;
+				globalError = true;
 			}
 		} catch (e) {
 			error = true;
+			globalError = true;
 		} finally {
 			loading = false;
 		}
 	}
 
 	onMount(() => {
-		fetchRate();
+		// Al montar, intentamos cargar sin forzar (usará caché si existe)
+		fetchRate(false);
 	});
 
 	// Lógica bidireccional
@@ -68,7 +90,13 @@
 			<Card.Title class="text-sm font-medium">Tasa BCV y Conversor</Card.Title>
 			<p class="mt-1 text-xs text-zinc-500">Cotización Oficial</p>
 		</div>
-		<Button variant="ghost" size="icon" class="h-8 w-8" onclick={fetchRate} disabled={loading}>
+		<Button
+			variant="ghost"
+			size="icon"
+			class="h-8 w-8"
+			onclick={() => fetchRate(true)}
+			disabled={loading}
+		>
 			<RefreshCcw class="h-4 w-4 text-zinc-500 {loading ? 'animate-spin' : ''}" />
 		</Button>
 	</Card.Header>
