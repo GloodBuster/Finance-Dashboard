@@ -2,10 +2,11 @@
 	import * as Card from '$lib/components/ui/card';
 	import { Doughnut } from 'svelte-chartjs';
 	import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-	// 1. Importamos el nuevo plugin
 	import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-	// 2. Registramos el plugin
+	// IMPORTAMOS NUESTRA MAGIA DE COLORES
+	import { getHexCategoria } from '$lib/utils/categories';
+
 	ChartJS.register(Title, Tooltip, Legend, ArcElement, ChartDataLabels);
 
 	type Categoria = {
@@ -24,15 +25,8 @@
 		datasets: [
 			{
 				data: categoriasActivas.map((cat) => cat.gastado),
-				backgroundColor: [
-					'#10b981',
-					'#f59e0b',
-					'#3b82f6',
-					'#8b5cf6',
-					'#ec4899',
-					'#f43f5e',
-					'#0ea5e9'
-				],
+				// AQUÍ ESTÁ LA MAGIA: Le pedimos el color hexadecimal exacto para cada categoría
+				backgroundColor: categoriasActivas.map((cat) => getHexCategoria(cat.nombre)),
 				borderWidth: 0,
 				hoverOffset: 4
 			}
@@ -62,7 +56,6 @@
 					const dataset = context.chart.data.datasets[0].data;
 					const total = dataset.reduce((acc: number, val: number) => acc + val, 0);
 					const porcentaje = Math.round((value / total) * 100);
-
 					return porcentaje > 5 ? `${porcentaje}%` : null;
 				}
 			},
@@ -82,7 +75,7 @@
 		<Card.Title>Distribución de Gastos</Card.Title>
 		<Card.Description>¿A dónde se ha ido tu dinero?</Card.Description>
 	</Card.Header>
-	<Card.Content class="flex min-h-[250px] flex-1 items-center justify-center pb-6">
+	<Card.Content class="flex min-h-[250px] flex-1 items-center justify-center">
 		{#if categoriasActivas.length > 0}
 			<div class="relative h-full w-full">
 				<Doughnut data={chartData} options={chartOptions} />

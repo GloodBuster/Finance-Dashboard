@@ -7,14 +7,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
 	import { Button } from '$lib/components/ui/button';
-	import { RefreshCcw, ArrowDownUp } from 'lucide-svelte';
+	import { RefreshCcw, Delete } from 'lucide-svelte';
 
 	// Inicializamos con los valores globales
 	let rate = $state(globalRate);
-	// Si ya tenemos una tasa global, no hace falta mostrar el estado de carga
 	let loading = $state(globalRate === 0 && !globalError);
 	let error = $state(globalError);
 
@@ -22,9 +19,10 @@
 	let usdAmount = $state('');
 	let vesAmount = $state('');
 
-	// Le agregamos el parámetro force para decidir si usamos caché o forzamos la petición
+	// Controla cuál de las dos "pantallas" está seleccionada para escribir
+	let activeField = $state<'usd' | 'ves'>('usd');
+
 	async function fetchRate(force = false) {
-		// Si ya hay tasa en la memoria global y no estamos forzando la recarga, salimos temprano
 		if (globalRate > 0 && !force) {
 			rate = globalRate;
 			error = globalError;
@@ -39,10 +37,9 @@
 			const data = await res.json();
 			if (data.status === 'success') {
 				rate = data.rate;
-				globalRate = data.rate; // Guardamos en la memoria global
+				globalRate = data.rate;
 				globalError = false;
-				// Si ya había algo escrito, recalcular al actualizar la tasa
-				if (usdAmount) handleUsdInput({ currentTarget: { value: usdAmount } } as any);
+				if (usdAmount) calculateFrom('usd');
 			} else {
 				error = true;
 				globalError = true;
@@ -56,36 +53,67 @@
 	}
 
 	onMount(() => {
-		// Al montar, intentamos cargar sin forzar (usará caché si existe)
 		fetchRate(false);
 	});
 
-	// Lógica bidireccional
-	function handleUsdInput(e: Event & { currentTarget: HTMLInputElement }) {
-		let val = e.currentTarget.value.replace(',', '.');
-		usdAmount = val;
+	// Lógica del Teclado Numérico Integrado
+	function handleKeyPress(key: string) {
+		if (loading || error) return;
 
-		if (!val || isNaN(Number(val)) || rate === 0) {
-			vesAmount = '';
+		if (key === 'backspace') {
+			if (activeField === 'usd') {
+				usdAmount = usdAmount.slice(0, -1);
+				calculateFrom('usd');
+			} else {
+				vesAmount = vesAmount.slice(0, -1);
+				calculateFrom('ves');
+			}
 			return;
 		}
-		vesAmount = (Number(val) * rate).toFixed(2);
+
+		if (key === '.') {
+			if (activeField === 'usd' && !usdAmount.includes('.')) {
+				usdAmount += usdAmount === '' ? '0.' : '.';
+			}
+			if (activeField === 'ves' && !vesAmount.includes('.')) {
+				vesAmount += vesAmount === '' ? '0.' : '.';
+			}
+			return;
+		}
+
+		// Si es un número normal
+		if (activeField === 'usd') {
+			if (usdAmount === '0') usdAmount = key;
+			else usdAmount += key;
+			calculateFrom('usd');
+		} else {
+			if (vesAmount === '0') vesAmount = key;
+			else vesAmount += key;
+			calculateFrom('ves');
+		}
 	}
 
-	function handleVesInput(e: Event & { currentTarget: HTMLInputElement }) {
-		let val = e.currentTarget.value.replace(',', '.');
-		vesAmount = val;
+	function calculateFrom(source: 'usd' | 'ves') {
+		if (rate === 0) return;
 
-		if (!val || isNaN(Number(val)) || rate === 0) {
-			usdAmount = '';
-			return;
+		if (source === 'usd') {
+			if (!usdAmount || isNaN(Number(usdAmount))) {
+				vesAmount = '';
+				return;
+			}
+			vesAmount = (Number(usdAmount) * rate).toFixed(2);
+		} else {
+			if (!vesAmount || isNaN(Number(vesAmount))) {
+				usdAmount = '';
+				return;
+			}
+			usdAmount = (Number(vesAmount) / rate).toFixed(2);
 		}
-		usdAmount = (Number(val) / rate).toFixed(2);
 	}
 </script>
 
-<Card.Root>
-	<Card.Header class="flex flex-row items-center justify-between pb-2">
+<Card.Root class="border-0 shadow-none sm:border sm:shadow-sm px-2">
+	<Card.Header class="flex flex-row items-center justify-between px-2 sm:px-6">
 		<div>
 			<Card.Title class="text-sm font-medium">Tasa BCV y Conversor</Card.Title>
 			<p class="mt-1 text-xs text-zinc-500">Cotización Oficial</p>
@@ -100,8 +128,8 @@
 			<RefreshCcw class="h-4 w-4 text-zinc-500 {loading ? 'animate-spin' : ''}" />
 		</Button>
 	</Card.Header>
-	<Card.Content>
-		<div class="mb-6 flex items-baseline gap-2">
+	<Card.Content class="px-2 sm:px-6">
+		<div class="mb-6 flex items-baseline justify-center gap-2">
 			{#if loading}
 				<div class="h-8 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800"></div>
 			{:else if error}
@@ -114,46 +142,62 @@
 			{/if}
 		</div>
 
-		<div
-			class="relative flex flex-col gap-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-900"
-		>
-			<div class="flex flex-col gap-1.5">
-				<Label for="usd" class="text-xs font-bold tracking-wider text-zinc-500 uppercase"
-					>Dólares ($)</Label
-				>
-				<Input
-					id="usd"
-					type="text"
-					inputmode="decimal"
-					placeholder="0.00"
-					value={usdAmount}
-					oninput={handleUsdInput}
-					disabled={loading || error}
-					class="bg-white text-lg font-medium dark:bg-black"
-				/>
-			</div>
-
-			<div
-				class="absolute top-1/2 left-1/2 z-10 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-black"
+		<div class="mb-6 grid grid-cols-2 gap-3">
+			<button
+				type="button"
+				class="flex w-full flex-col items-start gap-1.5 rounded-2xl border p-4 text-left transition-all {activeField ===
+				'usd'
+					? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-900/20'
+					: 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'}"
+				onclick={() => (activeField = 'usd')}
 			>
-				<ArrowDownUp class="h-4 w-4 text-zinc-400" />
-			</div>
-
-			<div class="flex flex-col gap-1.5">
-				<Label for="ves" class="text-xs font-bold tracking-wider text-zinc-500 uppercase"
-					>Bolívares (Bs)</Label
+				<span class="text-xs font-bold tracking-wider text-zinc-500 uppercase">Dólares ($)</span>
+				<span
+					class="text-2xl font-medium {usdAmount
+						? 'text-zinc-900 dark:text-white'
+						: 'text-zinc-300 dark:text-zinc-600'}"
 				>
-				<Input
-					id="ves"
-					type="text"
-					inputmode="decimal"
-					placeholder="0.00"
-					value={vesAmount}
-					oninput={handleVesInput}
-					disabled={loading || error}
-					class="bg-white text-lg font-medium dark:bg-black"
-				/>
-			</div>
+					{usdAmount || '0.00'}
+				</span>
+			</button>
+
+			<button
+				type="button"
+				class="flex w-full flex-col items-start gap-1.5 rounded-2xl border p-4 text-left transition-all {activeField ===
+				'ves'
+					? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-900/20'
+					: 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'}"
+				onclick={() => (activeField = 'ves')}
+			>
+				<span class="text-xs font-bold tracking-wider text-zinc-500 uppercase">Bolívares (Bs)</span>
+				<span
+					class="text-2xl font-medium {vesAmount
+						? 'text-zinc-900 dark:text-white'
+						: 'text-zinc-300 dark:text-zinc-600'}"
+				>
+					{vesAmount || '0.00'}
+				</span>
+			</button>
+		</div>
+
+		<div class="grid grid-cols-3 gap-2">
+			{#each ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0'] as key}
+				<Button
+					variant="outline"
+					class="h-14 rounded-xl border-zinc-200 bg-zinc-50 text-xl font-medium transition-transform hover:bg-zinc-100 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+					onclick={() => handleKeyPress(key)}
+				>
+					{key}
+				</Button>
+			{/each}
+
+			<Button
+				variant="outline"
+				class="h-14 rounded-xl border-zinc-200 bg-zinc-50 text-red-500 transition-transform hover:bg-red-50 hover:text-red-600 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-red-950/30"
+				onclick={() => handleKeyPress('backspace')}
+			>
+				<Delete class="h-6 w-6" />
+			</Button>
 		</div>
 	</Card.Content>
 </Card.Root>

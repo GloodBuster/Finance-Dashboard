@@ -42,14 +42,8 @@
 {:else}
 	<Drawer.Root bind:open>
 		<Drawer.Content>
-			<div class="mx-auto w-full max-w-md p-4 pb-12">
-				<Drawer.Header>
-					<Drawer.Title class="text-center">Conversor BCV</Drawer.Title>
-					<Drawer.Description class="text-center">Cálculo rápido a tasa oficial</Drawer.Description>
-				</Drawer.Header>
-				<div class="mt-4">
-					<BcvConverter />
-				</div>
+			<div class="mx-auto w-full max-w-md p-4">
+				<BcvConverter />
 			</div>
 		</Drawer.Content>
 	</Drawer.Root>
