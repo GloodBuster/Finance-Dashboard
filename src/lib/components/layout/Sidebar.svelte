@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LayoutDashboard, ReceiptText, Settings, Wallet } from 'lucide-svelte';
+	import { LayoutDashboard, ReceiptText, Calculator, Wallet } from 'lucide-svelte';
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import ThemeToggle from '../ui/ThemeToggle.svelte';
@@ -36,16 +36,14 @@
 			<ReceiptText class="h-5 w-5" />
 			Movimientos
 		</Button>
-	</nav>
 
-	<div class="border-t border-zinc-200 p-4 dark:border-zinc-800">
 		<Button
-			href="/ajustes"
-			variant={page.url.pathname.includes('/ajustes') ? 'secondary' : 'ghost'}
-			class="w-full justify-start gap-3 text-zinc-500"
+			href="/conversor"
+			variant={page.url.pathname.includes('/conversor') ? 'secondary' : 'ghost'}
+			class="w-full justify-start gap-3"
 		>
-			<Settings class="h-5 w-5" />
-			Ajustes
+			<Calculator class="h-5 w-5" />
+			Conversor
 		</Button>
-	</div>
+	</nav>
 </aside>

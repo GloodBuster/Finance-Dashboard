@@ -3,28 +3,28 @@
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { RefreshCcw, Delete, Copy, Check } from 'lucide-svelte';
-	import Skeleton from '$lib/components/ui/Skeleton.svelte'; // <-- Importamos el Skeleton
-	import { fetchBcvRate } from '$lib/services/api';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import { fetchBinanceRate } from '$lib/services/api';
 
-	const bcvQuery = createQuery(() => ({
-		queryKey: ['bcvRate'],
-		queryFn: fetchBcvRate,
+	const binanceQuery = createQuery(() => ({
+		queryKey: ['binanceRate'],
+		queryFn: fetchBinanceRate,
 		staleTime: 1000 * 60 * 5
 	}));
 
-	let usdAmount = $state('');
+	let usdtAmount = $state('');
 	let vesAmount = $state('');
-	let activeField = $state<'usd' | 'ves'>('usd');
-	let copiedUsd = $state(false);
+	let activeField = $state<'usdt' | 'ves'>('usdt');
+	let copiedUsdt = $state(false);
 	let copiedVes = $state(false);
 
 	function handleKeyPress(key: string) {
-		if (bcvQuery.isFetching || bcvQuery.isError) return;
+		if (binanceQuery.isFetching || binanceQuery.isError) return;
 
 		if (key === 'backspace') {
-			if (activeField === 'usd') {
-				usdAmount = usdAmount.slice(0, -1);
-				calculateFrom('usd');
+			if (activeField === 'usdt') {
+				usdtAmount = usdtAmount.slice(0, -1);
+				calculateFrom('usdt');
 			} else {
 				vesAmount = vesAmount.slice(0, -1);
 				calculateFrom('ves');
@@ -32,16 +32,16 @@
 			return;
 		}
 		if (key === '.') {
-			if (activeField === 'usd' && !usdAmount.includes('.'))
-				usdAmount += usdAmount === '' ? '0.' : '.';
+			if (activeField === 'usdt' && !usdtAmount.includes('.'))
+				usdtAmount += usdtAmount === '' ? '0.' : '.';
 			if (activeField === 'ves' && !vesAmount.includes('.'))
 				vesAmount += vesAmount === '' ? '0.' : '.';
 			return;
 		}
-		if (activeField === 'usd') {
-			if (usdAmount === '0') usdAmount = key;
-			else usdAmount += key;
-			calculateFrom('usd');
+		if (activeField === 'usdt') {
+			if (usdtAmount === '0') usdtAmount = key;
+			else usdtAmount += key;
+			calculateFrom('usdt');
 		} else {
 			if (vesAmount === '0') vesAmount = key;
 			else vesAmount += key;
@@ -49,30 +49,30 @@
 		}
 	}
 
-	function calculateFrom(source: 'usd' | 'ves') {
-		const rate = bcvQuery.data;
+	function calculateFrom(source: 'usdt' | 'ves') {
+		const rate = binanceQuery.data;
 		if (!rate) return;
 
-		if (source === 'usd') {
-			if (!usdAmount || isNaN(Number(usdAmount))) {
+		if (source === 'usdt') {
+			if (!usdtAmount || isNaN(Number(usdtAmount))) {
 				vesAmount = '';
 				return;
 			}
-			vesAmount = (Number(usdAmount) * rate).toFixed(2);
+			vesAmount = (Number(usdtAmount) * rate).toFixed(2);
 		} else {
 			if (!vesAmount || isNaN(Number(vesAmount))) {
-				usdAmount = '';
+				usdtAmount = '';
 				return;
 			}
-			usdAmount = (Number(vesAmount) / rate).toFixed(2);
+			usdtAmount = (Number(vesAmount) / rate).toFixed(2);
 		}
 	}
 
-	function copyToClipboard(text: string, type: 'usd' | 'ves') {
+	function copyToClipboard(text: string, type: 'usdt' | 'ves') {
 		navigator.clipboard.writeText(text || '0.00');
-		if (type === 'usd') {
-			copiedUsd = true;
-			setTimeout(() => (copiedUsd = false), 2000);
+		if (type === 'usdt') {
+			copiedUsdt = true;
+			setTimeout(() => (copiedUsdt = false), 2000);
 		} else {
 			copiedVes = true;
 			setTimeout(() => (copiedVes = false), 2000);
@@ -83,31 +83,31 @@
 <Card.Root class="border-0 px-2 shadow-none sm:border sm:shadow-sm">
 	<Card.Header class="flex flex-row items-center justify-between px-2 sm:px-6">
 		<div>
-			<Card.Title class="text-sm font-medium">Tasa BCV y Conversor</Card.Title>
-			<p class="mt-1 text-xs text-zinc-500">Cotización Oficial</p>
+			<Card.Title class="text-sm font-medium">Tasa Binance P2P</Card.Title>
+			<p class="mt-1 text-xs text-zinc-500">BDV / Pago Móvil (Min: 8000 Bs)</p>
 		</div>
 		<Button
 			variant="ghost"
 			size="icon"
 			class="h-8 w-8"
-			onclick={() => bcvQuery.refetch()}
-			disabled={bcvQuery.isFetching}
+			onclick={() => binanceQuery.refetch()}
+			disabled={binanceQuery.isFetching}
 		>
-			<RefreshCcw class="h-4 w-4 text-zinc-500 {bcvQuery.isFetching ? 'animate-spin' : ''}" />
+			<RefreshCcw class="h-4 w-4 text-zinc-500 {binanceQuery.isFetching ? 'animate-spin' : ''}" />
 		</Button>
 	</Card.Header>
 
 	<Card.Content class="px-2 sm:px-6">
 		<div class="mb-6 flex min-h-10 items-baseline justify-center gap-2">
-			{#if bcvQuery.isFetching}
+			{#if binanceQuery.isFetching}
 				<Skeleton class="h-10 w-48" />
-			{:else if bcvQuery.isError}
-				<span class="text-sm font-medium text-red-500">Servicio BCV temporalmente caído</span>
+			{:else if binanceQuery.isError}
+				<span class="text-sm font-medium text-red-500">Servicio Binance no disponible</span>
 			{:else}
-				<span class="text-3xl font-bold text-blue-600 dark:text-blue-500">
-					Bs. {bcvQuery.data?.toFixed(2)}
+				<span class="text-3xl font-bold text-yellow-600 dark:text-yellow-500">
+					Bs. {binanceQuery.data?.toFixed(2)}
 				</span>
-				<span class="text-sm font-medium text-zinc-500 dark:text-zinc-400">/ USD</span>
+				<span class="text-sm font-medium text-zinc-500 dark:text-zinc-400">/ USDT</span>
 			{/if}
 		</div>
 
@@ -116,16 +116,17 @@
 				<button
 					type="button"
 					class="flex w-full flex-col items-start gap-1.5 rounded-2xl border p-4 text-left transition-all {activeField ===
-					'usd'
-						? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-900/20'
+					'usdt'
+						? 'border-yellow-500 bg-yellow-50 ring-1 ring-yellow-500 dark:border-yellow-500/50 dark:bg-yellow-900/20'
 						: 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'}"
-					onclick={() => (activeField = 'usd')}
+					onclick={() => (activeField = 'usdt')}
 				>
-					<span class="text-xs font-bold tracking-wider text-zinc-500 uppercase">Dólares ($)</span>
+					<span class="text-xs font-bold tracking-wider text-zinc-500 uppercase">USDT (Tether)</span
+					>
 					<span
-						class="text-2xl font-medium {usdAmount
+						class="text-2xl font-medium {usdtAmount
 							? 'text-zinc-900 dark:text-white'
-							: 'text-zinc-300 dark:text-zinc-600'}">{usdAmount || '0.00'}</span
+							: 'text-zinc-300 dark:text-zinc-600'}">{usdtAmount || '0.00'}</span
 					>
 				</button>
 				<button
@@ -133,11 +134,11 @@
 					class="absolute top-3 right-3 rounded-md p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
 					onclick={(e) => {
 						e.stopPropagation();
-						copyToClipboard(usdAmount, 'usd');
+						copyToClipboard(usdtAmount, 'usdt');
 					}}
-					title="Copiar dólares"
+					title="Copiar USDT"
 				>
-					{#if copiedUsd}<Check class="h-4 w-4 text-emerald-500" />{:else}<Copy
+					{#if copiedUsdt}<Check class="h-4 w-4 text-yellow-500" />{:else}<Copy
 							class="h-4 w-4"
 						/>{/if}
 				</button>
@@ -148,7 +149,7 @@
 					type="button"
 					class="flex w-full flex-col items-start gap-1.5 rounded-2xl border p-4 text-left transition-all {activeField ===
 					'ves'
-						? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-900/20'
+						? 'border-yellow-500 bg-yellow-50 ring-1 ring-yellow-500 dark:border-yellow-500/50 dark:bg-yellow-900/20'
 						: 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900'}"
 					onclick={() => (activeField = 'ves')}
 				>
@@ -170,7 +171,7 @@
 					}}
 					title="Copiar bolívares"
 				>
-					{#if copiedVes}<Check class="h-4 w-4 text-emerald-500" />{:else}<Copy
+					{#if copiedVes}<Check class="h-4 w-4 text-yellow-500" />{:else}<Copy
 							class="h-4 w-4"
 						/>{/if}
 				</button>

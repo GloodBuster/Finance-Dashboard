@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LayoutDashboard, ReceiptText, Settings } from 'lucide-svelte';
+	import { LayoutDashboard, ReceiptText, Calculator } from 'lucide-svelte';
 	import { page } from '$app/state';
 </script>
 
@@ -29,15 +29,15 @@
 			<span class="text-[10px] font-medium">Historial</span>
 		</a>
 		<a
-			href="/ajustes"
+			href="/conversor"
 			class="flex h-full w-full flex-col items-center justify-center gap-1 {page.url.pathname.includes(
-				'/ajustes'
+				'/conversor'
 			)
 				? 'text-blue-600 dark:text-blue-500'
 				: 'text-zinc-500 dark:text-zinc-400'}"
 		>
-			<Settings class="h-5 w-5" />
-			<span class="text-[10px] font-medium">Ajustes</span>
+			<Calculator class="h-5 w-5" />
+			<span class="text-[10px] font-medium">Conversor</span>
 		</a>
 	</div>
 </nav>

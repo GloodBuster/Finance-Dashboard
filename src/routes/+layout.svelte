@@ -1,3 +1,4 @@
+<!-- src/routes/+layout.svelte -->
 <script lang="ts">
 	import './layout.css';
 	import { ModeWatcher } from 'mode-watcher';
@@ -5,32 +6,39 @@
 	import Sidebar from '$lib/components/layout/Sidebar.svelte';
 	import MobileNav from '$lib/components/layout/MobileNav.svelte';
 	import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
+	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 
 	let { children } = $props();
+
+	// Inicializamos el cliente de caché
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				staleTime: 1000 * 60 * 5 // La data se considera "fresca" por 5 minutos
+			}
+		}
+	});
 </script>
 
-<ModeWatcher defaultMode="dark" />
-
-<div class="flex min-h-dvh bg-zinc-50 transition-colors duration-300 dark:bg-zinc-950">
-	<Sidebar />
-
-	<main class="flex h-dvh min-w-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0">
-		<header
-			class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950"
-		>
-			<div class="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
-				<Wallet class="h-5 w-5 text-blue-600 dark:text-blue-500" />
-				Finance
+<QueryClientProvider client={queryClient}>
+	<ModeWatcher defaultMode="dark" />
+	<div class="flex min-h-dvh bg-zinc-50 transition-colors duration-300 dark:bg-zinc-950">
+		<Sidebar />
+		<main class="flex h-dvh min-w-0 flex-1 flex-col overflow-y-auto pb-16 md:pb-0">
+			<header
+				class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 md:hidden dark:border-zinc-800 dark:bg-zinc-950"
+			>
+				<div class="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+					<Wallet class="h-5 w-5 text-blue-600 dark:text-blue-500" /> Finance
+				</div>
+				<ThemeToggle />
+			</header>
+			<div class="flex-1 p-4 md:p-8">
+				<div class="mx-auto w-full max-w-6xl">
+					{@render children()}
+				</div>
 			</div>
-			<ThemeToggle />
-		</header>
-
-		<div class="flex-1 p-4 md:p-8">
-			<div class="mx-auto w-full max-w-6xl">
-				{@render children()}
-			</div>
-		</div>
-	</main>
-
-	<MobileNav />
-</div>
+		</main>
+		<MobileNav />
+	</div>
+</QueryClientProvider>

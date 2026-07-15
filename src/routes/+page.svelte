@@ -1,89 +1,108 @@
 <script lang="ts">
-	import BcvConverter from '$lib/components/tools/BcvConverter.svelte';
+	import { createQuery } from '@tanstack/svelte-query';
 	import BudgetCard from '$lib/components/dashboard/BudgetCard.svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { DollarSign, TrendingUp, TrendingDown, CircleAlert } from 'lucide-svelte';
 	import FloatingConverter from '$lib/components/tools/FloatingConverter.svelte';
 	import ExpensesDonut from '$lib/components/dashboard/ExpensesDonut.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import { fetchDashboardData } from '$lib/services/api';
 
-	let { data } = $props();
-
-	let finanzas = $derived(
-		data.financeData || {
-			mesActual: '---',
-			patrimonioTotal: 0,
-			ingresos: 0,
-			gastos: 0,
-			categorias: []
-		}
-	);
+	const dashboardQuery = createQuery(() => ({
+		queryKey: ['dashboard'],
+		queryFn: fetchDashboardData
+	}));
 </script>
 
-<div class="space-y-6">
-	<div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-		<div>
-			<h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
-			<p class="text-sm text-zinc-500 dark:text-zinc-400">Tu resumen financiero general.</p>
-		</div>
-
-		{#if data.error}
-			<div
-				class="flex max-w-md items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 shadow-sm md:items-center dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400"
-			>
-				<CircleAlert class="mt-0.5 h-5 w-5 shrink-0 md:mt-0" />
-				<span class="leading-tight">{data.error}</span>
+{#if dashboardQuery.isLoading}
+	<div class="space-y-6">
+		<div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+			<div>
+				<Skeleton class="h-8 w-48" />
+				<Skeleton class="mt-2 h-4 w-64" />
 			</div>
-		{/if}
-	</div>
-
-	<div class="grid gap-4 md:grid-cols-3">
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<Card.Title class="text-sm font-medium">Patrimonio Total</Card.Title>
-				<DollarSign class="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
-			</Card.Header>
-			<Card.Content>
-				<div class="text-2xl font-bold">${finanzas.patrimonioTotal.toFixed(2)}</div>
-				<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Actualizado en tiempo real</p>
-			</Card.Content>
-		</Card.Root>
-
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<Card.Title class="text-sm font-medium">Ingresos ({finanzas.mesActual})</Card.Title>
-				<TrendingUp class="h-4 w-4 text-emerald-500" />
-			</Card.Header>
-			<Card.Content>
-				<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-500">
-					+${finanzas.ingresos.toFixed(2)}
-				</div>
-				<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Registrados este mes</p>
-			</Card.Content>
-		</Card.Root>
-
-		<Card.Root>
-			<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
-				<Card.Title class="text-sm font-medium">Gastos ({finanzas.mesActual})</Card.Title>
-				<TrendingDown class="h-4 w-4 text-red-500" />
-			</Card.Header>
-			<Card.Content>
-				<div class="text-2xl font-bold text-red-600 dark:text-red-500">
-					-${finanzas.gastos.toFixed(2)}
-				</div>
-				<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Consumidos este mes</p>
-			</Card.Content>
-		</Card.Root>
-	</div>
-
-	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-		<div class="min-w-0">
-			<ExpensesDonut categorias={finanzas.categorias} />
 		</div>
 
-		<div class="min-w-0 md:col-span-1 lg:col-span-2">
-			<BudgetCard categorias={finanzas.categorias} mesActual={finanzas.mesActual} />
+		<div class="grid gap-4 md:grid-cols-3">
+			{#each Array(3) as _}
+				<Skeleton class="h-32 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+			{/each}
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+			<Skeleton class="h-80 rounded-xl border border-zinc-200 dark:border-zinc-800" />
+			<Skeleton
+				class="h-80 rounded-xl border border-zinc-200 md:col-span-1 lg:col-span-2 dark:border-zinc-800"
+			/>
 		</div>
 	</div>
-</div>
+{:else if dashboardQuery.isError}
+	<div class="space-y-6">
+		<div
+			class="flex max-w-md items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 shadow-sm md:items-center dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400"
+		>
+			<CircleAlert class="mt-0.5 h-5 w-5 shrink-0 md:mt-0" />
+			<span class="leading-tight">{dashboardQuery.error?.message}</span>
+		</div>
+	</div>
+{:else if dashboardQuery.isSuccess}
+	{@const financeData = dashboardQuery.data}
 
-<FloatingConverter />
+	<div class="space-y-6">
+		<div class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+			<div>
+				<h1 class="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">Dashboard</h1>
+				<p class="text-sm text-zinc-500 dark:text-zinc-400">Tu resumen financiero general.</p>
+			</div>
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-3">
+			<Card.Root>
+				<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+					<Card.Title class="text-sm font-medium">Patrimonio Total</Card.Title>
+					<DollarSign class="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+				</Card.Header>
+				<Card.Content>
+					<div class="text-2xl font-bold">${financeData.totalWealth.toFixed(2)}</div>
+					<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Actualizado en tiempo real</p>
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+					<Card.Title class="text-sm font-medium">Ingresos ({financeData.currentMonth})</Card.Title>
+					<TrendingUp class="h-4 w-4 text-emerald-500" />
+				</Card.Header>
+				<Card.Content>
+					<div class="text-2xl font-bold text-emerald-600 dark:text-emerald-500">
+						+${financeData.income.toFixed(2)}
+					</div>
+					<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Registrados este mes</p>
+				</Card.Content>
+			</Card.Root>
+
+			<Card.Root>
+				<Card.Header class="flex flex-row items-center justify-between space-y-0 pb-2">
+					<Card.Title class="text-sm font-medium">Gastos ({financeData.currentMonth})</Card.Title>
+					<TrendingDown class="h-4 w-4 text-red-500" />
+				</Card.Header>
+				<Card.Content>
+					<div class="text-2xl font-bold text-red-600 dark:text-red-500">
+						-${financeData.expenses.toFixed(2)}
+					</div>
+					<p class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Consumidos este mes</p>
+				</Card.Content>
+			</Card.Root>
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+			<div class="min-w-0">
+				<ExpensesDonut categorias={financeData.categories} />
+			</div>
+
+			<div class="min-w-0 md:col-span-1 lg:col-span-2">
+				<BudgetCard categorias={financeData.categories} mesActual={financeData.currentMonth} />
+			</div>
+		</div>
+	</div>
+{/if}
